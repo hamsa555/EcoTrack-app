@@ -1,0 +1,6 @@
+{
+  "name": "EcoTrack",
+  "description": "A sustainability tracking application to monitor CO2 impact, scan waste for recyclability, and compete with friends for a greener planet.",
+  "requestFramePermissions": ["camera", "geolocation", "accelerometer", "gyroscope"],
+  "majorCapabilities": []
+}

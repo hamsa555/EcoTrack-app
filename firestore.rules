@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidActivity(data, uid) {
+      return data.userId == uid
+        && data.type is string
+        && data.type.size() <= 32
+        && data.impact is number
+        && data.points is number
+        && data.timestamp == request.time
+        && (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() <= 2000000))
+        && (data.get('comment', null) == null || (data.comment is string && data.comment.size() <= 1000))
+        && (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100))
+        && (data.get('photoURL', null) == null || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && (data.get('isSocial', false) is bool)
+        && data.keys().hasAll(['userId', 'type', 'impact', 'points', 'timestamp'])
+        && data.keys().size() <= 15;
+    }
+
+    // Connection Test
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.get('uid', '') == userId
+          && data.score is number
+          && data.points is number
+          && (data.get('co2Saved', 0) is number)
+          && (data.get('steps', 0) is number)
+          && (data.get('energy', 0) is number)
+          && data.keys().hasAll(['uid', 'score', 'points'])
+          && data.keys().size() <= 20;
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      
+      allow create: if isOwner(userId) 
+        && isValidUser(incoming())
+        && incoming().get('createdAt', request.time) == request.time;
+        
+      allow update: if (
+        isOwner(userId)
+        && isValidUser(incoming())
+        && (incoming().get('updatedAt', request.time) == request.time)
+        && (incoming().get('createdAt', existing().get('createdAt', request.time)) == existing().get('createdAt', request.time))
+        && (
+          // Action: Update Stats
+          incoming().diff(existing()).affectedKeys().hasOnly(['score', 'points', 'co2Saved', 'steps', 'energy', 'updatedAt', 'displayName', 'photoURL'])
+        )
+      );
+    }
+
+    // Login Sessions Collection
+    match /login_sessions/{sessionId} {
+      function isValidSession(data) {
+        return data.userId == request.auth.uid
+          && data.timestamp == request.time
+          && data.keys().hasAll(['userId', 'timestamp'])
+          && data.keys().size() <= 10;
+      }
+
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidSession(incoming());
+    }
+
+    match /users/{userId}/activities/{activityId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidActivity(incoming(), userId);
+      allow delete: if isOwner(userId);
+    }
+  }
+}

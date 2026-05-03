@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User statistics and profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "score": { "type": "number" },
+        "co2Saved": { "type": "number" },
+        "steps": { "type": "number" },
+        "energy": { "type": "number" },
+        "points": { "type": "number" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "score", "points"]
+    },
+    "Follow": {
+      "title": "Follow Relationship",
+      "description": "Tracks who follows whom in the community",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["followerId", "followingId", "timestamp"]
+    },
+    "Activity": {
+      "title": "Activity Log",
+      "description": "Log of sustainability activities performed by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "type": { "type": "string", "enum": ["car", "bus", "walk", "meal", "bike", "recycle", "recycling"] },
+        "item": { "type": "string" },
+        "impact": { "type": "number" },
+        "points": { "type": "number" },
+        "comment": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "impact", "timestamp"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "Like on an activity",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "activityId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "activityId", "timestamp"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comment on an activity",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "text", "timestamp"]
+    },
+    "LoginSession": {
+      "title": "Login Session",
+      "description": "History of user logins",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userAgent": { "type": "string" },
+        "platform": { "type": "string" }
+      },
+      "required": ["userId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and statistics"
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Logs of sustainability activities performed by the user"
+    },
+    "/global_posts/{postId}": {
+      "schema": "Activity",
+      "description": "Global feed of community sustainability posts"
+    },
+    "/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Legacy logs of user activities (maintained for compatibility if needed)"
+    },
+    "/activities/{activityId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "User comments on activities"
+    },
+    "/follows/{followId}": {
+      "schema": "Follow",
+      "description": "User follow relationships"
+    },
+    "/likes/{likeId}": {
+      "schema": "Like",
+      "description": "User likes on activities"
+    },
+    "/login_sessions/{sessionId}": {
+      "schema": "LoginSession",
+      "description": "Logs of user login events"
+    }
+  }
+}
